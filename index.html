@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Interactivo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#eef3ff;font-family:system-ui,Arial,sans-serif}
+header{padding:18px 16px;text-align:center}h1{margin:0;font-size:24px}p{color:#aebbd1;margin:6px 0 0}
+main{max-width:900px;margin:auto;padding:12px}
+.panel{background:#1b2940;border:1px solid #30415e;border-radius:16px;padding:14px;margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,input{font:inherit;border:0;border-radius:10px;padding:10px 12px}
+button{background:#3d73d9;color:white;font-weight:650;cursor:pointer}
+button.secondary{background:#34445f}button:active{transform:scale(.98)}
+input{background:#0e1726;color:white;min-width:0;flex:1}
+.board{min-height:340px;position:relative;overflow:hidden;border-radius:16px;border:3px solid #607a9f;
+background:radial-gradient(ellipse at center,#335c50 0,#24493f 65%,#19392f 100%);
+display:flex;align-items:center;justify-content:center}
+.board:before{content:"";position:absolute;inset:12px;border:2px solid #b6d2c1;border-radius:8px;opacity:.65;pointer-events:none}
+.board:after{content:"";position:absolute;width:100px;height:100px;border:2px solid #b6d2c1;border-radius:50%;opacity:.65;pointer-events:none}
+.hint{z-index:1;color:#d4e7dc;background:#15372fbb;padding:8px 12px;border-radius:9px;text-align:center}
+.token{position:absolute;z-index:2;width:54px;height:54px;border-radius:50%;border:3px solid white;background:#f4f7ff;color:#142238;
+display:grid;place-items:center;font-size:27px;box-shadow:0 4px 12px #0008;touch-action:none;user-select:none;cursor:grab}
+.token small{position:absolute;top:50px;color:white;font-size:10px;text-shadow:0 1px 3px #000;white-space:nowrap}
+.token.selected{outline:4px solid #ffd45b}
+.status{font-size:13px;color:#b7c7df;margin-top:10px}
+footer{text-align:center;color:#8494ad;font-size:12px;padding:12px}
+</style>
+</head>
+<body>
+<header><h1>Live Interactivo</h1><p>Tablero de fichas y avatares · Demo local</p></header>
+<main>
+<section class="panel">
+ <div class="controls">
+  <input id="name" maxlength="16" placeholder="Nombre o usuario">
+  <button id="add">Añadir ficha</button>
+  <button id="random" class="secondary">Mover al azar</button>
+  <button id="clear" class="secondary">Reiniciar</button>
+ </div>
+ <div class="status" id="status">Demo de prueba: agrega fichas y arrástralas por el tablero.</div>
+</section>
+<section class="board" id="board"><div class="hint" id="hint">Tu tablero interactivo<br>Agrega una ficha para comenzar</div></section>
+<section class="panel">
+ <div class="controls">
+  <button class="secondary" data-emoji="😀">😀</button>
+  <button class="secondary" data-emoji="⚽">⚽</button>
+  <button class="secondary" data-emoji="⭐">⭐</button>
+  <button class="secondary" data-emoji="🔥">🔥</button>
+  <button class="secondary" data-emoji="🐱">🐱</button>
+  <button class="secondary" data-emoji="👑">👑</button>
+  <span class="status">Elige un símbolo para la próxima ficha.</span>
+ </div>
+</section>
+</main>
+<footer>Versión inicial. No está conectada a TikTok ni recibe eventos reales del chat.</footer>
+<script>
+const board=document.querySelector('#board'), nameInput=document.querySelector('#name');
+const statusEl=document.querySelector('#status'), hint=document.querySelector('#hint');
+let chosen='😀', count=0, selected=null;
+function update(){hint.hidden=board.querySelectorAll('.token').length>0}
+function addToken(label,emoji=chosen){
+ count++; const el=document.createElement('div'); el.className='token'; el.textContent=emoji;
+ const small=document.createElement('small'); small.textContent=label||`Invitado ${count}`; el.append(small);
+ el.style.left=`${12+Math.random()*70}%`;el.style.top=`${12+Math.random()*65}%`;
+ board.append(el); update(); select(el); drag(el);
+ statusEl.textContent=`Ficha añadida: ${label||`Invitado ${count}`}. Puedes arrastrarla.`;
+}
+function select(el){if(selected)selected.classList.remove('selected');selected=el;el.classList.add('selected')}
+function drag(el){
+ let startX=0,startY=0,left=0,top=0,dragging=false;
+ el.addEventListener('pointerdown',e=>{dragging=true;select(el);el.setPointerCapture(e.pointerId);
+ const r=el.getBoundingClientRect(),b=board.getBoundingClientRect();startX=e.clientX;startY=e.clientY;left=r.left-b.left;top=r.top-b.top;});
+ el.addEventListener('pointermove',e=>{if(!dragging)return;const maxX=board.clientWidth-el.offsetWidth,maxY=board.clientHeight-el.offsetHeight;
+ el.style.left=Math.max(0,Math.min(maxX,left+e.clientX-startX))+'px';el.style.top=Math.max(0,Math.min(maxY,top+e.clientY-startY))+'px';});
+ el.addEventListener('pointerup',()=>dragging=false);el.addEventListener('pointercancel',()=>dragging=false);
+ el.addEventListener('click',()=>select(el));
+}
+document.querySelector('#add').onclick=()=>{const n=nameInput.value.trim();addToken(n);nameInput.value=''};
+document.querySelector('#random').onclick=()=>{const tokens=[...board.querySelectorAll('.token')];tokens.forEach(t=>{t.style.left=`${Math.random()*Math.max(1,board.clientWidth-55)}px`;t.style.top=`${Math.random()*Math.max(1,board.clientHeight-55)}px`});statusEl.textContent='Las fichas se movieron al azar.'};
+document.querySelector('#clear').onclick=()=>{board.querySelectorAll('.token').forEach(t=>t.remove());selected=null;count=0;update();statusEl.textContent='Tablero reiniciado.'};
+document.querySelectorAll('[data-emoji]').forEach(b=>b.onclick=()=>{chosen=b.dataset.emoji;statusEl.textContent=`Símbolo seleccionado: ${chosen}`});
+</script>
+</body></html>
