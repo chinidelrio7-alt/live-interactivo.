@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Interactivo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101522;color:white;font-family:Arial;text-align:center;padding:18px}
+h1{color:#72d5ff}
+.panel{background:#202c40;padding:15px;border-radius:15px;margin:12px 0}
+.players{display:flex;flex-wrap:wrap;justify-content:center;gap:18px}
+.player{width:105px;padding:10px;background:#30435c;border-radius:14px;animation:appear .4s}
+.avatar{width:65px;height:65px;border-radius:50%;object-fit:cover;background:#527da7}
+.name{font-size:13px;font-weight:bold;margin-top:8px}
+button{border:0;border-radius:10px;padding:13px;margin:5px;color:white;background:#2865a2;font-weight:bold}
+.gift{background:#a43d75}
+@keyframes appear{from{transform:scale(0)}to{transform:scale(1)}}
+</style>
+</head>
+<body>
+<h1>LIVE INTERACTIVO</h1>
+<div class="panel">
+<h2>PARTICIPANTES</h2>
+<div id="players" class="players">
+<p>Esperando espectadores...</p>
+</div>
+</div>
+<div class="panel">
+<h3>SIMULADOR DE DONACIONES</h3>
+<input id="name" placeholder="Nombre del espectador">
+<br><br>
+<button onclick="gift('Rosa')">🌹 Rosa</button>
+<button class="gift" onclick="gift('Corazón')">❤️ Corazón</button>
+<button class="gift" onclick="gift('Oso')">🧸 Oso</button>
+</div>
+<div class="panel">
+<h3>REGISTRO DE EVENTOS</h3>
+<div id="log">Esperando eventos...</div>
+</div>
+<script>
+let participants=[];
+
+function gift(type){
+ const input=document.getElementById('name');
+ const name=input.value.trim() || 'Espectador';
+ const avatar='https://api.dicebear.com/9.x/avataaars/svg?seed='+encodeURIComponent(name);
+ let existing=participants.find(p=>p.name===name);
+
+ if(!existing){
+  existing={name,avatar,gifts:[]};
+  participants.push(existing);
+ }
+
+ existing.gifts.push(type);
+ render();
+ document.getElementById('log').textContent=
+ name+' envió: '+type;
+ input.value='';
+}
+
+function render(){
+ const area=document.getElementById('players');
+ area.innerHTML='';
+ participants.forEach(p=>{
+  const card=document.createElement('div');
+  card.className='player';
+  const img=document.createElement('img');
+  img.className='avatar';
+  img.src=p.avatar;
+  img.alt='Avatar de '+p.name;
+  const name=document.createElement('div');
+  name.className='name';
+  name.textContent=p.name;
+  const gifts=document.createElement('div');
+  gifts.textContent='🎁 '+p.gifts.length+' regalos';
+  card.append(img,name,gifts);
+  area.append(card);
+ });
+}
+</script>
+</body>
+</html>
